@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { supabase } from "@/lib/supabase"
 
 interface GalleryImage {
-  id: string
-  url: string
-  caption: string
-  alt: string
+  id: string | number; // Update this
+  url: string;
+  caption: string;
+  alt: string;
 }
 
 export default function AdminDashboard() {
@@ -54,59 +55,71 @@ export default function AdminDashboard() {
     }
   }
 
-  // 3. The Actual Upload Logic
   const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedFile || !caption) return
+  e.preventDefault()
+  if (!selectedFile || !caption) return
 
-    setIsUploading(true)
-    try {
-      // Convert File to Base64 to send to API
-      const reader = new FileReader()
-      reader.readAsDataURL(selectedFile)
-      
-      reader.onloadend = async () => {
-        const base64Image = reader.result
+  setIsUploading(true)
+  console.log("🚀 Starting upload process...")
 
-        const response = await fetch("/api/gallery", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            url: base64Image,
-            caption,
-            alt: caption, // Using caption as alt text for simplicity
-          }),
-        })
+  try {
+    const fileExt = selectedFile.name.split('.').pop()
+    const fileName = `${Math.random()}.${fileExt}`
+    const filePath = `uploads/${fileName}`
 
-        if (!response.ok) throw new Error("Upload failed")
+    // STEP 1: UPLOAD TO STORAGE
+    console.log("📤 Attempting to push to Supabase Storage bucket: 'gallery-images'...")
+    const { error: uploadError, data } = await supabase.storage
+      .from('gallery-images') 
+      .upload(filePath, selectedFile)
 
-        const newImage = await response.json()
-        setImages([newImage, ...images])
-        
-        // Reset Form
-        setStatus({ type: "success", msg: "Asset published to live gallery!" })
-        setCaption("")
-        setSelectedFile(null)
-        setPreviewUrl(null)
-      }
-    } catch (error) {
-      setStatus({ type: "error", msg: "Upload failed. Please try again." })
-    } finally {
-      setIsUploading(false)
-      setTimeout(() => setStatus({ type: "idle", msg: "" }), 3000)
+    if (uploadError) {
+      console.error("❌ STORAGE ERROR:", uploadError.message, uploadError)
+      throw new Error(`Storage failed: ${uploadError.message}`)
     }
-  }
 
-  const handleDelete = async (id: string) => {
+    console.log("✅ Storage success! Getting public URL...")
+    const { data: { publicUrl } } = supabase.storage
+      .from('gallery-images')
+      .getPublicUrl(filePath)
+
+    // STEP 2: SAVE TO DATABASE
+    console.log("💾 Saving URL to database table: 'gallery'...")
+    const response = await fetch("/api/gallery", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: publicUrl, caption, alt: caption }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      console.error("❌ DATABASE ERROR:", errorData)
+      throw new Error("Database sync failed")
+    }
+
+    const newImage = await response.json()
+    setImages([newImage, ...images])
+    setStatus({ type: "success", msg: "Asset published successfully!" })
+    
+    // Reset
+    setCaption(""); setSelectedFile(null); setPreviewUrl(null)
+  } catch (error: any) {
+    console.error("🕵️ Full Error Details:", error)
+    setStatus({ type: "error", msg: error.message || "Upload failed." })
+  } finally {
+    setIsUploading(false)
+  }
+}
+const handleDelete = async (id: string | number) => {
   try {
     // We pass the ID as a query string: ?id=123
-    const response = await fetch(`/api/gallery?id=${id}`, { 
+    const response = await fetch(`/api/gallery?id=${encodeURIComponent(String(id))}`, { 
       method: "DELETE" 
     });
     
     if (!response.ok) throw new Error("Delete failed");
     
-    setImages(images.filter((img) => img.id !== id));
+    setImages((prev) => prev.filter((img) => String(img.id) !== String(id)));
     setStatus({ type: "success", msg: "Asset removed successfully." });
   } catch (err) {
     setStatus({ type: "error", msg: "Could not delete image." });
@@ -240,7 +253,9 @@ export default function AdminDashboard() {
                   </div>
                   <div className="p-6">
                     <p className="text-[#025043] font-black uppercase text-sm mb-1 italic leading-tight">{image.caption}</p>
-                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Asset ID: {image.id.slice(-6)}</p>
+                   <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                    Asset ID: {String(image.id).slice(-6)}
+                  </p>
                   </div>
                 </motion.div>
               ))}
