@@ -19,7 +19,7 @@ export default function Page() {
   const timelineEntries = [
     {
       id: 1,
-      image: "/maternal.jpg",
+      image: "./maternal.jpg",
       alt: "Pregnant woman receiving health screening",
       title: "Maternal Health Screening",
       description: "We provide comprehensive basic maternal health screenings for pregnant women in underserved communities. Early detection of complications can be life-saving.",
@@ -27,7 +27,7 @@ export default function Page() {
     },
     {
       id: 2,
-      image: "/child-dent.jpg",
+      image: "./child-dent.jpg",
       alt: "Child receiving dental care",
       title: "Preventive Dental Services",
       description: "Oral health is essential to overall wellness. We offer integrated preventive dental services for children aged 3-15, ensuring healthy smiles.",
@@ -35,7 +35,7 @@ export default function Page() {
     },
     {
       id: 3,
-      image: "/education.jpg",
+      image: "./education.jpg",
       alt: "Community health education session",
       title: "Health Education",
       description: "Knowledge is power. We provide structured education on early warning signs of pregnancy-related complications and preventive health practices.",
