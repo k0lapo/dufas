@@ -56,7 +56,11 @@ function TimelineItem({ entry, index, scrollProgress }: TimelineItemProps) {
   const isLeft = entry.layout === "left"
 
   return (
-    <motion.div ref={itemRef} style={{ opacity, scale }} className="relative mb-20 md:mb-32">
+    <motion.div
+        ref={itemRef}
+        style={{ opacity, scale }}
+        className="relative overflow-visible mb-20 md:mb-32"
+      >
       {/* Timeline Dot */}
       <div className="absolute left-1/2 top-1/2 w-4 h-4 bg-gray-900 rounded-full transform -translate-x-1/2 -translate-y-1/2 z-10 hidden md:block" />
 

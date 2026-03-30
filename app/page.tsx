@@ -67,7 +67,7 @@ export default function Page() {
             
             <TextGradientScroll
               text={missionStatement}
-              className="text-4xl md:text-6xl lg:text-7xl font-black italic uppercase leading-[0.95] tracking-tighter"
+              className="text-4xl md:text-5xl lg:text-6xl font-black italic uppercase leading-[0.95] tracking-tighter"
               type="word"
               textOpacity="soft"
             />
